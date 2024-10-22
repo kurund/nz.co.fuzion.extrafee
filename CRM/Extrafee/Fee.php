@@ -109,8 +109,6 @@ class CRM_Extrafee_Fee extends CRM_Contribute_Form_ContributionBase {
       }
     }
     elseif ($formName == 'CRM_Event_Form_Registration_Register') {
-      $params = $form->getVar('_params');
-      // $params = $form->getVar('_params');
       if (!empty($params[0]['amount'])) {
         $params[0]['amount'] += $params[0]['amount'] * $percent / 100 + $processingFee;
         $params[0]['amount'] = round(CRM_Utils_Rule::cleanMoney($params[0]['amount']), 2);
