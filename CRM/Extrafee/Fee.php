@@ -18,7 +18,7 @@ class CRM_Extrafee_Fee extends CRM_Contribute_Form_ContributionBase {
     $form->set('amount', 0);
     $form->assign('payNowPayment', FALSE);
     if (!empty($form->_ccid) && !empty($form->_pendingAmount)) {
-      $form->_pendingAmount += $form->_pendingAmount * $percent/100 + $processingFee;
+      $form->_pendingAmount += $form->_pendingAmount * $percent / 100 + $processingFee;
       $form->assign('pendingAmount', $form->_pendingAmount);
       $form->assign('payNowPayment', TRUE);
     }
@@ -35,7 +35,7 @@ class CRM_Extrafee_Fee extends CRM_Contribute_Form_ContributionBase {
       $form->assign('extraFeeOptional', $extraFeeSettings['optional']);
       $form->assign('quick_config_display', $priceSet['is_quick_config']);
       CRM_Core_Region::instance('page-body')->add([
-        'template' => CRM_Extrafee_ExtensionUtil::path('templates/extra_fee.tpl')
+        'template' => CRM_Extrafee_ExtensionUtil::path('templates/extra_fee.tpl'),
       ]);
     }
   }
@@ -62,7 +62,12 @@ class CRM_Extrafee_Fee extends CRM_Contribute_Form_ContributionBase {
    *  Add % fee in submitted params.
    */
   public static function modifyTotalAmountInParams($formName, &$form, $extraFeeSettings, $ppId) {
-    if (!empty($extraFeeSettings['optional']) && empty($form->_params['extra_fee_add'])) {
+    // We need to add fees in 3 conditions here:
+    // 1. extra fee it not optional
+    // 2. extra fee is selected for contribution
+    // 3. extra fee is selected during event sign up
+    $params = $form->getVar('_params');
+    if (!empty($extraFeeSettings['optional']) && empty($form->_params['extra_fee_add']) && empty($params[0]['extra_fee_add'])) {
       return;
     }
     $processingFee = (float) $extraFeeSettings['processing_fee'] ?? 0;
@@ -78,10 +83,10 @@ class CRM_Extrafee_Fee extends CRM_Contribute_Form_ContributionBase {
     if (in_array($formName, [
       'CRM_Contribute_Form_Contribution_Main',
       'CRM_Contribute_Form_Contribution_Confirm',
-      'CRM_Contribute_Form_Contribution_ThankYou'
+      'CRM_Contribute_Form_Contribution_ThankYou',
     ])) {
       if (!empty($form->_params['amount'])) {
-        $extrafee_amount = $form->_params['amount'] * $percent/100 + $processingFee;
+        $extrafee_amount = $form->_params['amount'] * $percent / 100 + $processingFee;
         $extrafee_amount = round(CRM_Utils_Rule::cleanMoney($extrafee_amount), 2);
 
         $lineItems = $form->getOrder()->getLineItems();
@@ -105,8 +110,9 @@ class CRM_Extrafee_Fee extends CRM_Contribute_Form_ContributionBase {
     }
     elseif ($formName == 'CRM_Event_Form_Registration_Register') {
       $params = $form->getVar('_params');
+      // $params = $form->getVar('_params');
       if (!empty($params[0]['amount'])) {
-        $params[0]['amount'] += $params[0]['amount'] * $percent/100 + $processingFee;
+        $params[0]['amount'] += $params[0]['amount'] * $percent / 100 + $processingFee;
         $params[0]['amount'] = round(CRM_Utils_Rule::cleanMoney($params[0]['amount']), 2);
         $form->setVar('_params', $params);
         $form->set('params', $params);
@@ -160,6 +166,7 @@ class CRM_Extrafee_Fee extends CRM_Contribute_Form_ContributionBase {
         }
       }
       return $ppExtraFeeSettings;
-      }
     }
+  }
+
 }
